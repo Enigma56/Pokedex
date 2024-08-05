@@ -1,3 +1,3 @@
-module github.com/Enigma56/pokedex
+module pokedex
 
 go 1.22.5
