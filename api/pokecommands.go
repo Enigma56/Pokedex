@@ -4,6 +4,7 @@ import (
     "os"
     "net/http"
     "time"
+    "errors"
 )
 
 type Client struct {
@@ -22,6 +23,7 @@ type Config struct {
     ApiClient Client
     NextLocationAreaURL *string
     PrevLocationAreaURL *string
+    CurrLocationAreaURL string
 }
 
 type cmd func(*Config) error
@@ -30,11 +32,12 @@ var CommandMap = map[string]cmd{
     "help": CmdHelp,
     "exit": CmdExit,
     "map": CmdMap,
+    "mapb": CmdMapb,
 }
 
 type LocationArea struct {
     Count int `json:"count"`
-    Next string `json:"next"`
+    Next *string `json:"next"`
     Previous *string `json:"previous"`
     Results []struct {
         Name string `json:"name"`
@@ -43,24 +46,49 @@ type LocationArea struct {
 }
 
 func CmdMap(cfg *Config) error {
-    //apiClient := NewClient()
-    areas, err := cfg.ApiClient.ListLocationAreas()
+    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL)
 
     if err != nil {
         return err
     }
     
     cfg.NextLocationAreaURL = areas.Next
-    cfg.PrevLocationAreaURL = areas.Prev
-    printLocations(areas)
+    cfg.PrevLocationAreaURL = areas.Previous
+    cfg.CurrLocationAreaURL = *cfg.NextLocationAreaURL
+
+
+
+    for _, loc := range areas.Results {
+        fmt.Println(loc.Name)
+    }
     return nil
 }
 
 
 
 func CmdMapb(cfg *Config) error {
+    if cfg.PrevLocationAreaURL == nil {
+        return errors.New("No prev location URL has been set, try calling map cmd?")
+    }
+
+    cfg.CurrLocationAreaURL = *cfg.PrevLocationAreaURL
+
+    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL)
+    if err != nil {
+        return err
+    }
+ 
+    cfg.NextLocationAreaURL = areas.Next
+    cfg.PrevLocationAreaURL = areas.Previous
+    
+
+    for _, loc := range areas.Results {
+        fmt.Println(loc.Name)
+    }
+
     return nil
 }
+
 func CmdHelp(cfg *Config) error {
     fmt.Println("\nWelcome to the Pokedex!")
     fmt.Println("Usage:\n\nhelp: Displays a help message\nexit: Exit the Pokedex")
@@ -72,14 +100,4 @@ func CmdExit(cfg *Config) error {
     os.Exit(0)
 
     return nil
-}
-
-
-
-func printLocations(location LocationArea) {
-    maps := location.Results
-
-    for _, loc := range maps {
-        fmt.Println(loc.Name)
-    }
 }

@@ -8,8 +8,10 @@ import (
     "encoding/json"
 )
 
-func (c *Client) ListLocationAreas() (LocationArea, error) {
-    req, err := http.NewRequest("GET", "https://pokeapi.co/api/v2/location-area", nil)
+func (c *Client) ListLocationAreas(pageURL *string) (LocationArea, error) {
+    url := pageURL
+
+    req, err := http.NewRequest("GET", *url, nil)
     if err != nil {
         log.Fatal(err)
         return LocationArea{}, err
