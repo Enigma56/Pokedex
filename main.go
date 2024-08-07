@@ -7,6 +7,7 @@ import (
     "log"
 
     "github.com/Enigma56/pokedex/api"
+    "github.com/Enigma56/pokedex/internal/cache"
 ) 
 
 func main() {
@@ -14,6 +15,10 @@ func main() {
         ApiClient: api.NewClient(),
         CurrLocationAreaURL: "https://pokeapi.co/api/v2/location-area",
     }
+
+    cache := cache.NewCache()
+    //fmt.Println(cache)
+
 
     commandMap := api.CommandMap
         
@@ -30,7 +35,7 @@ func main() {
             log.Print("Command not recognized")
         }
 
-        err := cmd(&cfg)
+        err := cmd(&cfg, &cache)
         if err != nil {
             fmt.Printf("Command failed with error: %v\n", err)   
         }

@@ -5,6 +5,8 @@ import (
     "net/http"
     "time"
     "errors"
+
+    "github.com/Enigma56/pokedex/internal/cache"
 )
 
 type Client struct {
@@ -26,7 +28,7 @@ type Config struct {
     CurrLocationAreaURL string
 }
 
-type cmd func(*Config) error
+type cmd func(*Config, *cache.PokeCache) error
 
 var CommandMap = map[string]cmd{
     "help": CmdHelp,
@@ -45,7 +47,7 @@ type LocationArea struct {
     } `json:"results"`
 }
 
-func CmdMap(cfg *Config) error {
+func CmdMap(cfg *Config, pc *cache.PokeCache) error {
     areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL)
 
     if err != nil {
@@ -56,7 +58,7 @@ func CmdMap(cfg *Config) error {
     cfg.PrevLocationAreaURL = areas.Previous
     cfg.CurrLocationAreaURL = *cfg.NextLocationAreaURL
 
-
+    //Cast results to a []byte --> add to PokeCache
 
     for _, loc := range areas.Results {
         fmt.Println(loc.Name)
@@ -66,7 +68,7 @@ func CmdMap(cfg *Config) error {
 
 
 
-func CmdMapb(cfg *Config) error {
+func CmdMapb(cfg *Config, pc *cache.PokeCache) error {
     if cfg.PrevLocationAreaURL == nil {
         return errors.New("No prev location URL has been set, try calling map cmd?")
     }
@@ -89,14 +91,14 @@ func CmdMapb(cfg *Config) error {
     return nil
 }
 
-func CmdHelp(cfg *Config) error {
+func CmdHelp(cfg *Config, pc *cache.PokeCache) error {
     fmt.Println("\nWelcome to the Pokedex!")
     fmt.Println("Usage:\n\nhelp: Displays a help message\nexit: Exit the Pokedex")
 
     return nil
 }
 
-func CmdExit(cfg *Config) error {
+func CmdExit(cfg *Config, pc *cache.PokeCache) error {
     os.Exit(0)
 
     return nil
