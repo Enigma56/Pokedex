@@ -1,65 +1,85 @@
 package api
+import (
+    "fmt"
+    "os"
+    "net/http"
+    "time"
+)
 
-type LocationData struct {
+type Client struct {
+    httpClient http.Client
+}
+
+func NewClient() Client {
+    return Client{
+        httpClient: http.Client{
+            Timeout: time.Minute,
+        },
+    }
+}
+
+type Config struct {
+    ApiClient Client
+    NextLocationAreaURL *string
+    PrevLocationAreaURL *string
+}
+
+type cmd func(*Config) error
+
+var CommandMap = map[string]cmd{
+    "help": CmdHelp,
+    "exit": CmdExit,
+    "map": CmdMap,
+}
+
+type LocationArea struct {
     Count int `json:"count"`
     Next string `json:"next"`
     Previous *string `json:"previous"`
-    Results []Location `json:"results"`
+    Results []struct {
+        Name string `json:"name"`
+        Url string `json:"url"`
+    } `json:"results"`
 }
 
-type Location struct {
-    Name string `json:"name"`
-    Url string `json:"url"`
-}
+func CmdMap(cfg *Config) error {
+    //apiClient := NewClient()
+    areas, err := cfg.ApiClient.ListLocationAreas()
 
-func printLocations(location LocationData) {
-    maps := location.Results
-
-    for _, loc := range maps {
-        fmt.Println(loc.Name)
-    }
-} 
-
-func pokeLocations() error {
-    res, err := http.Get("https://pokeapi.co/api/v2/location-area")
     if err != nil {
-        log.Fatal(err)
+        return err
     }
-
-    body, err := io.ReadAll(res.Body)
-    res.Body.Close()
-
-    if res.StatusCode > 299 {
-		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-	}
-	if err != nil {
-		log.Fatal(err)
-	}
-
-    //fmt.Printf("%s\n", body)
-
-    //byteBody := []byte(body)
-    //fmt.Println(byteBody)
-    //fmt.Println(string(body))
-    var location LocationData
-    err1 := json.Unmarshal([]byte(body), &location)
-    if err1 != nil {
-        fmt.Println(err1)
-    }
-
-    printLocations(location)
-
+    
+    cfg.NextLocationAreaURL = areas.Next
+    cfg.PrevLocationAreaURL = areas.Prev
+    printLocations(areas)
     return nil
 }
-func cmdHelp() error {
-    fmt.Println("\nWlcome to the Pokedex!")
+
+
+
+func CmdMapb(cfg *Config) error {
+    return nil
+}
+func CmdHelp(cfg *Config) error {
+    fmt.Println("\nWelcome to the Pokedex!")
     fmt.Println("Usage:\n\nhelp: Displays a help message\nexit: Exit the Pokedex")
 
     return nil
 }
 
-func cmdExit() error {
+func CmdExit(cfg *Config) error {
     os.Exit(0)
 
     return nil
+}
+
+
+
+func printLocations(location LocationArea) {
+    maps := location.Results
+
+    for _, loc := range maps {
+        fmt.Println(loc.Name)
+    }
 }
