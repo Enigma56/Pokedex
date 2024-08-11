@@ -48,7 +48,7 @@ type LocationArea struct {
 }
 
 func CmdMap(cfg *Config, pc *cache.PokeCache) error {
-    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL)
+    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL, pc)
 
     if err != nil {
         return err
@@ -59,7 +59,6 @@ func CmdMap(cfg *Config, pc *cache.PokeCache) error {
     cfg.CurrLocationAreaURL = *cfg.NextLocationAreaURL
 
     //Cast results to a []byte --> add to PokeCache
-
     for _, loc := range areas.Results {
         fmt.Println(loc.Name)
     }
@@ -75,7 +74,7 @@ func CmdMapb(cfg *Config, pc *cache.PokeCache) error {
 
     cfg.CurrLocationAreaURL = *cfg.PrevLocationAreaURL
 
-    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL)
+    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL, pc)
     if err != nil {
         return err
     }

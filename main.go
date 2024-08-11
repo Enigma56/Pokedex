@@ -5,6 +5,7 @@ import (
     "os"
     "strings"
     "log"
+    "time"
 
     "github.com/Enigma56/pokedex/api"
     "github.com/Enigma56/pokedex/internal/cache"
@@ -16,10 +17,7 @@ func main() {
         CurrLocationAreaURL: "https://pokeapi.co/api/v2/location-area",
     }
 
-    cache := cache.NewCache()
-    //fmt.Println(cache)
-
-
+    cache := cache.NewCache(5 * time.Minute)
     commandMap := api.CommandMap
         
     for {

@@ -3,7 +3,8 @@ package cache
 import (
     "time"
     "sync"
-    "fmt"
+    //"errors"
+    //"fmt"
 )
 
 type PokeCache struct {
@@ -18,11 +19,14 @@ type cacheEntry struct {
     val []byte
 }
 
-func NewCache() PokeCache {
-    return PokeCache{
+func NewCache(interval time.Duration) PokeCache {
+    pc := PokeCache{
         cache: map[string]cacheEntry{},
-        reapInterval: 5 * time.Second, 
+        reapInterval: interval, 
     }
+
+    go pc.reapLoop(pc.reapInterval)
+    return pc
 }
 
 func (pc *PokeCache) Add(key string, value []byte) error{
@@ -38,14 +42,33 @@ func (pc *PokeCache) Add(key string, value []byte) error{
     return nil
 }
 
-func (pc *PokeCache) Get(key string) ([]byte, bool, error) {
+func (pc *PokeCache) Get(key string) ([]byte, bool) {
     pc.cacheMux.Lock()
     defer pc.cacheMux.Unlock()
 
-    val, ok := pc.cache[key]
+    entry, ok := pc.cache[key]
     if !ok {
-        return []byte{}, false, errors.New("Invalid key")
+        return []byte{}, false
     }
     
-   return val, true, nil 
+   return entry.val, true 
+}
+
+func (pc *PokeCache) reapLoop(interval time.Duration) {
+    ticker := time.NewTicker(interval) 
+    for range ticker.C {
+        pc.reap(interval)
+    }
+}
+
+func (pc *PokeCache) reap(interval time.Duration) {
+    pc.cacheMux.Lock()
+    defer pc.cacheMux.Unlock()
+    timeAgo := time.Now().UTC().Add(-interval)
+    for key, val := range pc.cache {
+        //Has the entry existed for longer than the given interval?
+        if val.createdAt.Before(timeAgo) {
+            delete(pc.cache, key)
+        }
+    }
 }
