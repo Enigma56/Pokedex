@@ -10,11 +10,13 @@ import (
 )
 
 type Client struct {
+    cache cache.PokeCache
     httpClient http.Client
 }
 
 func NewClient() Client {
     return Client{
+        cache: cache.NewCache(5 * time.Minute),
         httpClient: http.Client{
             Timeout: time.Minute,
         },
@@ -28,13 +30,14 @@ type Config struct {
     CurrLocationAreaURL string
 }
 
-type cmd func(*Config, *cache.PokeCache) error
+type cmd func(*Config, ...string) error
 
 var CommandMap = map[string]cmd{
     "help": CmdHelp,
     "exit": CmdExit,
     "map": CmdMap,
     "mapb": CmdMapb,
+    "explore": CmdExploreArea,
 }
 
 type LocationArea struct {
@@ -47,8 +50,27 @@ type LocationArea struct {
     } `json:"results"`
 }
 
-func CmdMap(cfg *Config, pc *cache.PokeCache) error {
-    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL, pc)
+func CmdExploreArea(cfg *Config, args ...string) error {
+    if len(args) < 1 {
+        return errors.New("No argument passed to function!")
+    }
+
+    area, err := cfg.ApiClient.ListAreaDetails(args[0])
+
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Exploring %s...", args[0])
+    fmt.Println("Pokemon:")
+    for _, encounter := range area.PokemonEncounters {
+        fmt.Println(encounter.Pokemon.Name)
+    }
+
+    return nil
+}
+func CmdMap(cfg *Config, args ...string) error {
+    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL)
 
     if err != nil {
         return err
@@ -67,14 +89,14 @@ func CmdMap(cfg *Config, pc *cache.PokeCache) error {
 
 
 
-func CmdMapb(cfg *Config, pc *cache.PokeCache) error {
+func CmdMapb(cfg *Config, args ...string) error {
     if cfg.PrevLocationAreaURL == nil {
         return errors.New("No prev location URL has been set, try calling map cmd?")
     }
 
     cfg.CurrLocationAreaURL = *cfg.PrevLocationAreaURL
 
-    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL, pc)
+    areas, err := cfg.ApiClient.ListLocationAreas(&cfg.CurrLocationAreaURL)
     if err != nil {
         return err
     }
@@ -90,14 +112,14 @@ func CmdMapb(cfg *Config, pc *cache.PokeCache) error {
     return nil
 }
 
-func CmdHelp(cfg *Config, pc *cache.PokeCache) error {
+func CmdHelp(cfg *Config, args ...string) error {
     fmt.Println("\nWelcome to the Pokedex!")
     fmt.Println("Usage:\n\nhelp: Displays a help message\nexit: Exit the Pokedex")
 
     return nil
 }
 
-func CmdExit(cfg *Config, pc *cache.PokeCache) error {
+func CmdExit(cfg *Config, args ...string) error {
     os.Exit(0)
 
     return nil

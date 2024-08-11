@@ -7,12 +7,12 @@ import (
     "io"
     "encoding/json"
 
-    "github.com/Enigma56/pokedex/internal/cache"
+    //"github.com/Enigma56/pokedex/internal/cache"
 )
 
-func (c *Client) ListLocationAreas(pageURL *string, pc *cache.PokeCache) (LocationArea, error) {
-    //url := pageURL
-    dat, ok := pc.Get(*pageURL)
+
+func (c *Client) ListLocationAreas(pageURL *string) (LocationArea, error) {
+    dat, ok := c.cache.Get(*pageURL)
     if ok {
         fmt.Println("cache hit!")
         var LocationAreaData LocationArea
@@ -50,7 +50,7 @@ func (c *Client) ListLocationAreas(pageURL *string, pc *cache.PokeCache) (Locati
         return LocationArea{}, err
     }
 
-    err = pc.Add(*pageURL, body)
+    err = c.cache.Add(*pageURL, body)
     fmt.Printf("Added url to cache: %s\n", *pageURL)
     if err != nil {
         return LocationArea{}, err
