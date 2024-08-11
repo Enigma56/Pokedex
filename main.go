@@ -8,11 +8,12 @@ import (
     //"time"
 
     "github.com/Enigma56/pokedex/api"
-    //"github.com/Enigma56/pokedex/internal/cache"
+    "github.com/Enigma56/pokedex/internal/pokedict"
 ) 
 
 func main() {
     cfg := api.Config{
+        Pokedex: pokedict.NewPokedex(),
         ApiClient: api.NewClient(),
         CurrLocationAreaURL: "https://pokeapi.co/api/v2/location-area",
     }

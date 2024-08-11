@@ -5,17 +5,22 @@ import (
     "net/http"
     "time"
     "errors"
+    "math/rand"
 
     "github.com/Enigma56/pokedex/internal/cache"
+    "github.com/Enigma56/pokedex/internal/pokedict"
 )
 
 type Client struct {
+    rand *rand.Rand
     cache cache.PokeCache
     httpClient http.Client
 }
 
 func NewClient() Client {
+    randSrc := rand.NewSource(1)
     return Client{
+        rand: rand.New(randSrc),
         cache: cache.NewCache(5 * time.Minute),
         httpClient: http.Client{
             Timeout: time.Minute,
@@ -24,6 +29,7 @@ func NewClient() Client {
 }
 
 type Config struct {
+    Pokedex pokedict.Pokedex
     ApiClient Client
     NextLocationAreaURL *string
     PrevLocationAreaURL *string
@@ -38,6 +44,9 @@ var CommandMap = map[string]cmd{
     "map": CmdMap,
     "mapb": CmdMapb,
     "explore": CmdExploreArea,
+    "catch": CmdCatch,
+    "inspect": CmdInspect,
+    "pokedex": CmdPokedex,
 }
 
 type LocationArea struct {
@@ -48,6 +57,50 @@ type LocationArea struct {
         Name string `json:"name"`
         Url string `json:"url"`
     } `json:"results"`
+}
+
+func CmdPokedex(cfg *Config, args ...string) error {
+    cfg.Pokedex.GetAllPokemon()
+    return nil
+}
+
+func CmdInspect(cfg *Config, args ...string) error { 
+    if len(args) < 1 {
+        return errors.New("No argument passed to function!")
+    }
+
+    err := cfg.Pokedex.GetInfo(args[0])
+    if err != nil {
+        return err
+    }   
+    return nil
+}
+
+func CmdCatch(cfg *Config, args ...string) error {
+    if len(args) < 1 {
+        return errors.New("No argument passed to function!")
+    }
+
+    float := cfg.ApiClient.rand.Float64()
+    pokemon, err := cfg.ApiClient.FetchPokemonInfo(args[0])
+
+    if err != nil {
+        return err
+    }
+
+    fmt.Printf("Throwing a Pokeball at %s!\n", pokemon.Name)
+    catchSuccessful := catchSuccessful(float, pokemon.BaseExperience) 
+    if catchSuccessful {
+        err := cfg.Pokedex.Add(pokemon) //no possible way to return an error
+        if err != nil {
+            return err
+        }
+        fmt.Printf("%s was caught!\n", pokemon.Name)
+        return nil
+    } else {
+        fmt.Printf("%s escaped!\n", pokemon.Name)
+        return nil
+    } 
 }
 
 func CmdExploreArea(cfg *Config, args ...string) error {
@@ -61,7 +114,7 @@ func CmdExploreArea(cfg *Config, args ...string) error {
         return err
     }
 
-    fmt.Printf("Exploring %s...", args[0])
+    fmt.Printf("Exploring %s...\n", args[0])
     fmt.Println("Pokemon:")
     for _, encounter := range area.PokemonEncounters {
         fmt.Println(encounter.Pokemon.Name)
