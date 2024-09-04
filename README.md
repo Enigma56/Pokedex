@@ -29,3 +29,23 @@ To interact with my code you just have to clone the repo, build the project and 
 2. `go run .`
 
 > Note: The first option builds a binary then runs in. The second option does not build a binary rather compiles then runs the go project
+
+### Step 4
+You can now interact with the project using the CLI Commands listed below!
+
+## CLI Commands
+| Command Name | CLI Command |
+| ------------ | ----------- |
+| Help - List command descriptions| `help`|
+| Exit - Exit the program | `exit` |
+| Map - List next locations| `map` |
+| Mapb - List previous locations | `mapb` |
+| Explore - See pokemon in an area | `explore <location-name>` |
+| Catch - Catch a pokemon| `catch <pokemon-name>` |
+| Inspect - Inspect stats of a pokemon| `inspect <pokemon-name>` |
+| Pokedex - See all pokemon you have caught| `pokedex` |
+
+## Thank you!
+I was a lot of fun to create this project. Following a guide allowed me to reference it when I struggled with learning a particular concept. All of the code written is my own and anything that resembles the code from the original project is an attempt at following best practices.
+> You can see the project description and steps [here](https://www.boot.dev/courses/build-pokedex-cli)
+
